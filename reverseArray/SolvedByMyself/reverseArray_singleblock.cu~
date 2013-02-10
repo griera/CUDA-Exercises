@@ -32,8 +32,6 @@
  * include, in the user documentation and internal comments to the code,
  * the above Disclaimer and U.S. Government End Users Notice.
  */
-
-
 // includes, system
 #include <stdio.h>
 #include <assert.h>
@@ -41,15 +39,12 @@
 // Simple utility function to check for CUDA runtime errors
 void checkCUDAError(const char* msg);
 
-// Part 2 of 2: implement the kernel
-__global__ void reverseArrayBlock(int* reverse, int* original )
+// Part 1 of 1: implement the kernel
+__global__ void reverseArrayBlock(int *reverse, int *original )
 {
-	int offset_org = blockIdx.x * blockDim.x;
-	int offset_rev = blockDim.x * (gridDim.x - 1 - blockIdx.x);
-	
-	int idx = offset_org + threadIdx.x;
-	int reverse_idx = offset_rev + (blockDim.x - 1 - threadIdx.x); 
-	reverse[reverse_idx] = original[idx];
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int reverse_idx = blockIdx.x * blockDim.x - 1 - threadIdx.x;
+    reverse[reverse_idx] = original[idx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,16 +54,14 @@ int main( int argc, char** argv)
 {
     // pointer for host memory and size
     int *h_a;
-    int dimA = 256 * 1024; // 256K elements (1MB total)
+    int dimA = 256;
 
     // pointer for device memory
     int *d_b, *d_a;
 
     // define grid and block size
-    int numThreadsPerBlock = 256;
-
-    // Part 1 of 2: compute number of blocks needed based on array size and desired block size
-    int numBlocks = dimA / numThreadsPerBlock;  
+    int numBlocks = 1;
+    int numThreadsPerBlock = dimA;
 
     // allocate host and device memory
     size_t memSize = numBlocks * numThreadsPerBlock * sizeof(int);
@@ -88,7 +81,7 @@ int main( int argc, char** argv)
     // launch kernel
     dim3 dimGrid(numBlocks);
     dim3 dimBlock(numThreadsPerBlock);
-    reverseArrayBlock<<< dimGrid, dimBlock >>>(d_b, d_a);
+    reverseArrayBlock<<<dimGrid, dimBlock>>>(d_b, d_a);
 
     // block until the device has completed
     cudaThreadSynchronize();
@@ -106,7 +99,6 @@ int main( int argc, char** argv)
     // verify the data returned to the host is correct
     for (int i = 0; i < dimA; i++)
     {
-        printf("%d\n", h_a[i]);
         assert(h_a[i] == dimA - 1 - i );
     }
 
@@ -127,9 +119,9 @@ int main( int argc, char** argv)
 void checkCUDAError(const char *msg)
 {
     cudaError_t err = cudaGetLastError();
-    if (cudaSuccess != err) 
+    if( cudaSuccess != err) 
     {
-        fprintf(stderr, "Cuda error: %s: %s.\n", msg, cudaGetErrorString(err) );
+        fprintf(stderr, "Cuda error: %s: %s.\n", msg, cudaGetErrorString( err) );
         exit(EXIT_FAILURE);
-    }                         
+    }
 }

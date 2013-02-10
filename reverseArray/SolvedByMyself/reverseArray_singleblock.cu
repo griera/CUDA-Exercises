@@ -42,8 +42,8 @@ void checkCUDAError(const char* msg);
 // Part 1 of 1: implement the kernel
 __global__ void reverseArrayBlock(int *reverse, int *original )
 {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int reverse_idx = blockIdx.x * blockDim.x - 1 - threadIdx.x;
+    int idx = threadIdx.x;
+    int reverse_idx = blockDim.x - 1 - threadIdx.x;
     reverse[reverse_idx] = original[idx];
 }
 
